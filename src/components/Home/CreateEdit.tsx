@@ -7,44 +7,56 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import DatePickerValue from "../common/DatePicker";
 
 export default function CreateEdit({ open, handleClose }: any) {
-    const modules = {
-        toolbar: [
-            [{ header: [1, 2, 3, 4, 5, 6, false] }],
-            ["bold", "italic", "underline", "strike", "blockquote"],
-            [{ size: [] }],
-            [{ font: [] }],
-            [{ align: ["right", "center", "justify"] }],
-            [{ list: "ordered" }, { list: "bullet" }],
-            ["link", "image"],
-            [{ color: ["red", "#785412"] }],
-            [{ background: ["red", "#785412"] }],
-        ],
-    };
+  const initialValues = {
+    title: "",
+    description: "",
+    category: "",
+    due_date: "",
+    status: "",
+    attachment: "",
+  };
+  const [params, setParams] = React.useState(initialValues);
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, 4, 5, 6, false] }],
+      ["bold", "italic", "underline", "strike", "blockquote"],
+      [{ size: [] }],
+      [{ font: [] }],
+      [{ align: ["right", "center", "justify"] }],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["link", "image"],
+      [{ color: ["red", "#785412"] }],
+      [{ background: ["red", "#785412"] }],
+    ],
+  };
 
-    const formats = [
-        "header",
-        "bold",
-        "italic",
-        "underline",
-        "strike",
-        "blockquote",
-        "list",
-        "bullet",
-        "link",
-        "color",
-        "image",
-        "background",
-        "align",
-        "size",
-        "font",
-    ];
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "blockquote",
+    "list",
+    "bullet",
+    "link",
+    "color",
+    "image",
+    "background",
+    "align",
+    "size",
+    "font",
+  ];
+  const statusOptions = [
+    { value: "todo", label: "Todo" },
+    { value: "in_progress", label: "In Progress" },
+    { value: "completed", label: "Completed" },
+  ];
   return (
     <React.Fragment>
-      <Button variant="outlined" onClick={open}>
-        Open alert dialog
-      </Button>
       <Dialog
         open={open}
         onClose={handleClose}
@@ -66,24 +78,13 @@ export default function CreateEdit({ open, handleClose }: any) {
               type="text"
               name="title"
               placeholder="Task Title"
-              //   value={taskForm.title}
-              //   onChange={handleFormChange}
+              value={params.title}
+              onChange={() => {}}
               className="w-full mb-2 p-2 border rounded"
             />
             <ReactQuill
-              // value={item?.description}
-              // onChange={(
-              //     newContent,
-              //     delta,
-              //     source
-              // ) =>
-              //     handleChangeEditor(
-              //         index,
-              //         newContent,
-              //         delta,
-              //         source
-              //     )
-              // }
+              value={params?.description}
+              onChange={() => {}}
               readOnly={false}
               modules={modules}
               formats={formats}
@@ -92,6 +93,33 @@ export default function CreateEdit({ open, handleClose }: any) {
               bounds=".editor-container"
               className="editor"
             />
+            <div className="flex justify-between items-start">
+              <div>
+                <p>Task Category*</p>
+                <div className="flex justify-start items-center gap-2">
+                  <p className="p-2 border rounded-2xl">Work</p>
+                  <p className="p-2 border rounded-2xl">Personal</p>
+                </div>
+              </div>
+              <div>
+                <p>Due On*</p>
+                <DatePickerValue
+                  label="Due Date"
+                  value={params?.due_date}
+                  onChange={() => {}}
+                />
+              </div>
+              <div>
+                <p>Task Status*</p>
+                <select value={params?.status} onChange={() => {}}>
+                  {statusOptions.map((option: any) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
         </DialogContent>
         <DialogActions>

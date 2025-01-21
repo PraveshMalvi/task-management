@@ -88,7 +88,7 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
         </div>
 
           {/* in progress tasks */}
-        <div className="flex justify-between items-center w-full bg-[#FAC3FF] py-2 px-4 rounded-tl-lg rounded-tr-lg mt-4">
+        <div className="flex justify-between items-center w-full bg-[#85D9F1] py-2 px-4 rounded-tl-lg rounded-tr-lg mt-4">
           <p>In-Progress</p>
           <p>Toggle</p>
         </div>
@@ -97,7 +97,7 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
         </div>
 
          {/* completed tasks */}
-         <div className="flex justify-between items-center w-full bg-[#FAC3FF] py-2 px-4 rounded-tl-lg rounded-tr-lg mt-4">
+         <div className="flex justify-between items-center w-full bg-[#CEFFCC] py-2 px-4 rounded-tl-lg rounded-tr-lg mt-4">
           <p>Completed</p>
           <p>Toggle</p>
         </div>
