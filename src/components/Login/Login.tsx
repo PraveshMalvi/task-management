@@ -22,11 +22,11 @@ const Login: React.FC<LoginProps> = ({ setUser }) => {
   };
 
   return (
-    <div className="w-full h-screen bg-white">
-      <div className="h-full w-full p-20 relative">
-        <div className="flex flex-col justify-center items-start gap-2 h-full w-1/3 px-8">
+    <div className="w-full h-screen bg-white overflow-hidden">
+      <div className="h-full w-full flex justify-start items-center">
+        <div className="flex flex-col justify-center items-start gap-2 h-full w-1/2 p-16">
           <p className="text-[#7B1984] text-2xl font-bold">TaskBuddy</p>
-          <p className="text-sm">
+          <p className="text-sm w-[65%]">
             Streamline your workflow and track progress effortlessly with our
             all-in-one task management app.
           </p>
@@ -38,8 +38,18 @@ const Login: React.FC<LoginProps> = ({ setUser }) => {
             <span>Sign In with Google</span>
           </button>
         </div>
-        <img className="absolute top-4 right-0 z-20" src="/assets/images/loginBg.webp" alt="" />
-        <img className="absolute top-0 right-0 z-10" src="/assets/images/circlesBg.webp" alt="" />
+        <div className="w-1/2 relative h-full">
+          <img
+            className="absolute top-4 right-0 z-20"
+            src="/assets/images/loginBg.webp"
+            alt=""
+          />
+          <img
+            className="absolute top-0 right-0 z-10"
+            src="/assets/images/circlesBg.webp"
+            alt=""
+          />
+        </div>
       </div>
     </div>
   );
