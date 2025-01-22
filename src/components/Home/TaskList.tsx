@@ -7,6 +7,9 @@ import CreateEdit from "./CreateEdit";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebaseConfig";
 import moment from "moment";
+import Button from "@mui/material/Button";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 
 interface TaskListProps {
   user: User | null;
@@ -31,12 +34,24 @@ type TaskGroups = {
 
 const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
   const navigate = useNavigate();
-  const [openModal, setOpenModal] = useState(false);
+  const [openModal, setOpenModal] = useState({
+    add: false,
+    edit: false
+  });
   const [tasks, setTasks] = useState<TaskGroups>({
     todo: [],
     in_progress: [],
     completed: [],
   });
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const open = Boolean(anchorEl);
+  
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
   const fetchTasks = async () => {
     try {
@@ -74,6 +89,10 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
     }
   };
 
+  const handleModal = (type:string, value:boolean) => {
+    setOpenModal({...openModal, [type]: value})
+  }
+
   return (
     <div className="w-full h-full flex flex-col gap-4 p-8">
       <div className="flex justify-between items-center">
@@ -108,7 +127,7 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
             className="w-full py-2 px-4 border rounded-full"
           />
           <button
-            onClick={() => setOpenModal(true)}
+            onClick={() => handleModal("add", true)}
             className="bg-[#7B1984] p-2 rounded-full w-[200px] h-fit text-white"
           >
             ADD TASK
@@ -144,7 +163,29 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
               <p>{item?.status}</p>
               <p>{item?.category}</p>
               <p className="w-full flex justify-end items-end">
-                <img src="/assets/icons/moreIcon.svg" alt="" />
+                <div>
+                  <Button
+                    id="basic-button"
+                    aria-controls={open ? "basic-menu" : undefined}
+                    aria-haspopup="true"
+                    aria-expanded={open ? "true" : undefined}
+                    onClick={handleClick}
+                  >
+                    <img src="/assets/icons/moreIcon.svg" alt="" />
+                  </Button>
+                  <Menu
+                    id="basic-menu"
+                    anchorEl={anchorEl}
+                    open={open}
+                    onClose={handleClose}
+                    MenuListProps={{
+                      "aria-labelledby": "basic-button",
+                    }}
+                  >
+                    <MenuItem onClick={() => handleModal("edit", true)}>Edit</MenuItem>
+                    <MenuItem onClick={handleClose}>Delete</MenuItem>
+                  </Menu>
+                </div>
               </p>
             </div>
           ))}
@@ -168,7 +209,8 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
           {/* completed tasks list */}
         </div>
       </div>
-      <CreateEdit open={openModal} handleClose={() => setOpenModal(false)} />
+      <CreateEdit type="add" open={openModal.add} handleClose={handleModal} />
+      <CreateEdit type="edit" open={openModal.edit} handleClose={handleModal} />
     </div>
   );
 };

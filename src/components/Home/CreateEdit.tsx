@@ -8,7 +8,7 @@ import "react-quill/dist/quill.snow.css";
 import { db } from "../../firebaseConfig";
 import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
 
-export default function CreateEdit({ open, handleClose, task }: any) {
+export default function CreateEdit({ open, handleClose, task, type }: any) {
   const initialValues = task || {
     title: "",
     description: "",
@@ -61,11 +61,11 @@ export default function CreateEdit({ open, handleClose, task }: any) {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setParams((prev:any) => ({ ...prev, [name]: value }));
+    setParams((prev: any) => ({ ...prev, [name]: value }));
   };
 
   const handleQuillChange = (value: string) => {
-    setParams((prev:any) => ({ ...prev, description: value }));
+    setParams((prev: any) => ({ ...prev, description: value }));
   };
 
   const handleSubmit = async () => {
@@ -80,17 +80,18 @@ export default function CreateEdit({ open, handleClose, task }: any) {
         const docRef = await addDoc(collection(db, "tasks"), params);
         console.log("Task created with ID:", docRef.id);
       }
-      handleClose();
+      handleClose(type, false);
     } catch (error) {
       console.error("Error saving task:", error);
     }
   };
 
   return (
-    <Dialog open={open} onClose={handleClose}>
+    <Dialog open={open} onClose={() => handleClose(type, false)}>
       <DialogTitle>
         <div className="flex justify-between items-center">
           <p className="font-bold">Create Task</p>
+          <img className="cursor-pointer" onClick={()=>handleClose(type, false)} src="/assets/icons/close.svg" alt="" />
         </div>
         <hr className="mt-2" />
       </DialogTitle>
@@ -119,20 +120,27 @@ export default function CreateEdit({ open, handleClose, task }: any) {
               <div className="flex justify-start items-center gap-2">
                 <p
                   onClick={(e: any) =>
-                    setParams((prev:any) => ({ ...prev, category: "Work" }))
+                    setParams((prev: any) => ({ ...prev, category: "Work" }))
                   }
                   className={`py-1 px-5  rounded-2xl cursor-pointer ${
-                    params?.category === "Work" ? "bg-[#7B1984] border-0 text-white" : "border text-black"
+                    params?.category === "Work"
+                      ? "bg-[#7B1984] border-0 text-white"
+                      : "border text-black"
                   }`}
                 >
                   Work
                 </p>
                 <p
                   onClick={(e: any) =>
-                    setParams((prev:any) => ({ ...prev, category: "Personal" }))
+                    setParams((prev: any) => ({
+                      ...prev,
+                      category: "Personal",
+                    }))
                   }
                   className={`py-1 px-5 border rounded-2xl cursor-pointer ${
-                    params?.category === "Personal" ? "bg-[#7B1984] border-0 text-white" : "border text-black"
+                    params?.category === "Personal"
+                      ? "bg-[#7B1984] border-0 text-white"
+                      : "border text-black"
                   }`}
                 >
                   Personal
@@ -170,7 +178,7 @@ export default function CreateEdit({ open, handleClose, task }: any) {
       <DialogActions>
         <div className="border-t w-full flex justify-end items-end gap-4 py-4">
           <button
-            onClick={handleClose}
+            onClick={() => handleClose(type, false)}
             className="bg-white py-2 px-6 rounded-full border"
           >
             Cancel
