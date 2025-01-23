@@ -10,6 +10,7 @@ import moment from "moment";
 import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import { doc, deleteDoc } from "firebase/firestore";
 
 interface TaskListProps {
   user: User | null;
@@ -36,24 +37,22 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
   const navigate = useNavigate();
   const [openModal, setOpenModal] = useState({
     add: false,
-    edit: false
+    edit: false,
+    data: {},
+    id: "",
   });
   const [tasks, setTasks] = useState<TaskGroups>({
     todo: [],
     in_progress: [],
     completed: [],
   });
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  const [anchorElMap, setAnchorElMap] = useState<
+    Record<string, HTMLElement | null>
+  >({});
+  const [loading, setLoading] = useState(false);
 
   const fetchTasks = async () => {
+    setLoading(true);
     try {
       const querySnapshot = await getDocs(collection(db, "tasks"));
       const allTasks = querySnapshot.docs.map((doc) => ({
@@ -68,12 +67,12 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
       };
 
       setTasks(groupedTasks);
+      setLoading(false);
     } catch (error) {
       console.error("Error fetching tasks:", error);
+      setLoading(false);
     }
   };
-
-  console.log("tasks:", tasks);
 
   useEffect(() => {
     fetchTasks();
@@ -89,12 +88,107 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
     }
   };
 
-  const handleModal = (type:string, value:boolean) => {
-    setOpenModal({...openModal, [type]: value})
-  }
+  const handleModal = (type: string, value: boolean, data: any = {}) => {
+    setOpenModal((prevState) => ({
+      ...prevState,
+      [type]: value,
+      data,
+      id: data?.id ?? "",
+    }));
+  };
+
+  const handleMenuOpen = (
+    taskId: string,
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    setAnchorElMap((prevState) => ({
+      ...prevState,
+      [taskId]: event.currentTarget,
+    }));
+  };
+
+  const handleMenuClose = (taskId: string) => {
+    setAnchorElMap((prevState) => ({
+      ...prevState,
+      [taskId]: null,
+    }));
+  };
+
+  const handleDeleteTask = async (taskId: string, status: string) => {
+    try {
+      await deleteDoc(doc(db, "tasks", taskId));
+
+      setTasks((prevTasks: any) => ({
+        ...prevTasks,
+        [status.toLowerCase()]: prevTasks[status.toLowerCase()].filter(
+          (task: any) => task.id !== taskId
+        ),
+      }));
+
+      console.log("Task deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  };
+
+  const renderTaskList = (tasks: Task[], section: string) => {
+    return tasks.map((item) => (
+      <div
+        className="grid grid-cols-5 w-full py-3 px-4 border-b border-black/10"
+        key={item.id}
+      >
+        <p>{item?.title}</p>
+        <p>{moment(item?.due_date).format("LL")}</p>
+        <p>{item?.status}</p>
+        <p>{item?.category}</p>
+        <p className="w-full flex justify-end items-end">
+          <div>
+            <Button
+              id={`basic-button-${item.id}`}
+              aria-controls={
+                anchorElMap[item.id] ? `basic-menu-${item.id}` : undefined
+              }
+              aria-haspopup="true"
+              aria-expanded={Boolean(anchorElMap[item.id]) ? "true" : undefined}
+              onClick={(event) => handleMenuOpen(item.id, event)}
+            >
+              <img src="/assets/icons/moreIcon.svg" alt="" />
+            </Button>
+            <Menu
+              id={`basic-menu-${item.id}`}
+              anchorEl={anchorElMap[item.id]}
+              open={Boolean(anchorElMap[item.id])}
+              onClose={() => handleMenuClose(item.id)}
+              MenuListProps={{
+                "aria-labelledby": `basic-button-${item.id}`,
+              }}
+            >
+              <MenuItem
+                onClick={() => {
+                  handleModal("edit", true, item);
+                  handleMenuClose(item.id);
+                }}
+              >
+                Edit
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  handleDeleteTask(item.id, item.status);
+                  handleMenuClose(item.id);
+                }}
+              >
+                Delete
+              </MenuItem>
+            </Menu>
+          </div>
+        </p>
+      </div>
+    ));
+  };
 
   return (
     <div className="w-full h-full flex flex-col gap-4 p-8">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <p className="text-2xl font-semibold">TaskBuddy</p>
         <div className="flex justify-center items-center gap-2">
@@ -102,6 +196,8 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
           <p>{user?.displayName || "User"}</p>
         </div>
       </div>
+
+      {/* Filters & Add Task */}
       <div className="flex justify-between items-center">
         <div className="flex justify-center items-center gap-4">
           <button>List</button>
@@ -122,95 +218,80 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
             type="text"
             name="search"
             placeholder="Search"
-            value={""}
-            //   onChange={handleFormChange}
             className="w-full py-2 px-4 border rounded-full"
           />
           <button
-            onClick={() => handleModal("add", true)}
+            onClick={() => handleModal("add", true, {})}
             className="bg-[#7B1984] p-2 rounded-full w-[200px] h-fit text-white"
           >
             ADD TASK
           </button>
         </div>
       </div>
+
       <div className="mt-2">
         <hr />
       </div>
 
+      {/* Tasks */}
       <div className="w-full">
         <div className="grid grid-cols-5 w-full px-4">
-          {/* tasks heading */}
-          {["Task Name", "Due On", "Task Status", "Task Category", ""]?.map(
-            (item: any, index: number) => (
-              <p className="" key={index}>
-                {item}
-              </p>
+          {["Task Name", "Due On", "Task Status", "Task Category", ""].map(
+            (item, index) => (
+              <p key={index}>{item}</p>
             )
           )}
         </div>
 
-        {/* todo tasks */}
-        <div className="flex justify-between items-center w-full bg-[#FAC3FF] py-2 px-4 rounded-tl-lg rounded-tr-lg mt-4">
-          <p>Todo</p>
-          <img src="/assets/icons/upIcon.svg" alt="" />
-        </div>
-        <div className="w-full min-h-[200px] bg-[#F1F1F1]">
-          {tasks?.todo?.map((item: any) => (
-            <div className="grid grid-cols-5 w-full py-3 px-4 border-b border-black/10">
-              <p>{item?.title}</p>
-              <p>{moment(item?.due_date).format("LL")}</p>
-              <p>{item?.status}</p>
-              <p>{item?.category}</p>
-              <p className="w-full flex justify-end items-end">
-                <div>
-                  <Button
-                    id="basic-button"
-                    aria-controls={open ? "basic-menu" : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={open ? "true" : undefined}
-                    onClick={handleClick}
-                  >
-                    <img src="/assets/icons/moreIcon.svg" alt="" />
-                  </Button>
-                  <Menu
-                    id="basic-menu"
-                    anchorEl={anchorEl}
-                    open={open}
-                    onClose={handleClose}
-                    MenuListProps={{
-                      "aria-labelledby": "basic-button",
-                    }}
-                  >
-                    <MenuItem onClick={() => handleModal("edit", true)}>Edit</MenuItem>
-                    <MenuItem onClick={handleClose}>Delete</MenuItem>
-                  </Menu>
-                </div>
-              </p>
+        {/* Sections */}
+        {loading ? (
+          <div className="w-full h-[60vh] flex justify-center items-center">
+            <p className="text-[24px] font-bold">Loading...</p>
+          </div>
+        ) : (
+          <div className="mt-4">
+            <div className="flex justify-between items-center w-full bg-[#FAC3FF] py-2 px-4 rounded-tl-lg rounded-tr-lg mt-4">
+              <p>To-Do</p>
+              <img src="/assets/icons/upIcon.svg" alt="" />
             </div>
-          ))}
-        </div>
+            <div className="w-full min-h-[200px] bg-[#F1F1F1] rounded-br-lg rounded-bl-lg">
+              {renderTaskList(tasks.todo, "To-Do")}
+            </div>
 
-        {/* in progress tasks */}
-        <div className="flex justify-between items-center w-full bg-[#85D9F1] py-2 px-4 rounded-tl-lg rounded-tr-lg mt-4">
-          <p>In-Progress</p>
-          <p>Toggle</p>
-        </div>
-        <div className="w-full min-h-[200px] bg-[#F1F1F1]">
-          {/* in progress tasks list */}
-        </div>
+            <div className="flex justify-between items-center w-full bg-[#85D9F1] py-2 px-4 rounded-tl-lg rounded-tr-lg mt-4">
+              <p>In-Progress</p>
+              <img src="/assets/icons/upIcon.svg" alt="" />
+            </div>
+            <div className="w-full min-h-[200px] bg-[#F1F1F1] rounded-br-lg rounded-bl-lg">
+              {renderTaskList(tasks.in_progress, "In-Progress")}
+            </div>
 
-        {/* completed tasks */}
-        <div className="flex justify-between items-center w-full bg-[#CEFFCC] py-2 px-4 rounded-tl-lg rounded-tr-lg mt-4">
-          <p>Completed</p>
-          <p>Toggle</p>
-        </div>
-        <div className="w-full min-h-[200px] bg-[#F1F1F1]">
-          {/* completed tasks list */}
-        </div>
+            <div className="flex justify-between items-center w-full bg-[#CEFFCC] py-2 px-4 rounded-tl-lg rounded-tr-lg mt-4">
+              <p>Completed</p>
+              <img src="/assets/icons/upIcon.svg" alt="" />
+            </div>
+            <div className="w-full min-h-[200px] bg-[#F1F1F1] rounded-br-lg rounded-bl-lg">
+              {renderTaskList(tasks.completed, "Completed")}
+            </div>
+          </div>
+        )}
       </div>
-      <CreateEdit type="add" open={openModal.add} handleClose={handleModal} />
-      <CreateEdit type="edit" open={openModal.edit} handleClose={handleModal} />
+
+      {/* Modals */}
+      <CreateEdit
+        type="add"
+        open={openModal.add}
+        handleClose={handleModal}
+        task={openModal?.data}
+        fetchTasks={fetchTasks}
+      />
+      <CreateEdit
+        type="edit"
+        open={openModal.edit}
+        handleClose={handleModal}
+        task={openModal?.data}
+        fetchTasks={fetchTasks}
+      />
     </div>
   );
 };
