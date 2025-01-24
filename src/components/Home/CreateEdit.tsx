@@ -8,29 +8,30 @@ import "react-quill/dist/quill.snow.css";
 import { db } from "../../firebaseConfig";
 import { collection, addDoc, updateDoc, doc } from "firebase/firestore";
 
-export default function CreateEdit({ open, handleClose, task, type, fetchTasks }: any) {
+export default function CreateEdit({
+  open,
+  handleClose,
+  task,
+  type,
+  fetchTasks,
+}: any) {
   const initialValues = {
-    id: null,
     title: "",
     description: "",
     category: "",
     due_date: "",
-    status: "",
+    status: "To-Do",
     attachment: "",
   };
   const [params, setParams] = React.useState(initialValues);
-  
-  React.useEffect(()=>{
-    setParams({
-      id: task?.id,
-      title: task?.title,
-      description: task?.description,
-      category: task?.category,
-      due_date: task?.due_date,
-      status: task?.status,
-      attachment: task?.attachment,
-    })
-  },[task])
+
+  React.useEffect(() => {
+    if (type === "edit") {
+      setParams(task);
+    }
+  }, [type, task]);
+
+  console.log("params", params, task);
 
   const modules = {
     toolbar: [
@@ -84,15 +85,17 @@ export default function CreateEdit({ open, handleClose, task, type, fetchTasks }
   const handleSubmit = async () => {
     try {
       if (task?.id) {
+        // Update existing task
         const taskDoc = doc(db, "tasks", task.id);
         await updateDoc(taskDoc, params);
         console.log("Task updated!");
-        fetchTasks()
       } else {
-        await addDoc(collection(db, "tasks"), params);
-        console.log("Task created!");
-        fetchTasks()
+        // Handle new task creation (as in the original implementation)
+        const docRef = await addDoc(collection(db, "tasks"), params);
+        console.log("Task created with ID:", docRef.id);
       }
+      fetchTasks();
+      setParams(initialValues)
       handleClose(type, false, {});
     } catch (error) {
       console.error("Error saving task:", error);
@@ -104,7 +107,12 @@ export default function CreateEdit({ open, handleClose, task, type, fetchTasks }
       <DialogTitle>
         <div className="flex justify-between items-center">
           <p className="font-bold">Create Task</p>
-          <img className="cursor-pointer" onClick={()=>handleClose(type, false, {})} src="/assets/icons/close.svg" alt="" />
+          <img
+            className="cursor-pointer"
+            onClick={() => handleClose(type, false, {})}
+            src="/assets/icons/close.svg"
+            alt=""
+          />
         </div>
         <hr className="mt-2" />
       </DialogTitle>

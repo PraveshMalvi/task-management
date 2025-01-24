@@ -11,6 +11,8 @@ import Button from "@mui/material/Button";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { doc, deleteDoc } from "firebase/firestore";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface TaskListProps {
   user: User | null;
@@ -50,6 +52,10 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
     Record<string, HTMLElement | null>
   >({});
   const [loading, setLoading] = useState(false);
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [startDate, endDate] = dateRange;
+
+  console.log("dateRange", dateRange);
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -120,11 +126,11 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
 
       setTasks((prevTasks: any) => ({
         ...prevTasks,
-        [status.toLowerCase()]: prevTasks[status.toLowerCase()].filter(
+        [status.toLowerCase()]: prevTasks[status.toLowerCase()]?.filter(
           (task: any) => task.id !== taskId
         ),
       }));
-
+      fetchTasks();
       console.log("Task deleted successfully!");
     } catch (error) {
       console.error("Error deleting task:", error);
@@ -210,8 +216,32 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
       <div className="flex justify-between items-center">
         <div className="flex justify-center items-center gap-4">
           <p>Filter by:</p>
-          <button>Category</button>
-          <button>Due Date</button>
+          <select
+            name="status"
+            value={""}
+            onChange={() => {}}
+            className="border rounded-full py-1 px-2"
+          >
+            {[
+              { value: "Work", label: "Work" },
+              { value: "Personal", label: "Personal" },
+            ].map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <DatePicker
+            placeholderText="Due Date"
+            selectsRange
+            startDate={startDate}
+            endDate={endDate}
+            onChange={(update: any) => {
+              setDateRange(update);
+            }}
+            isClearable={true}
+            className="border rounded-full py-1 px-2 text-black"
+          />
         </div>
         <div className="flex justify-center items-center gap-2">
           <input
@@ -254,7 +284,7 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
               <p>To-Do</p>
               <img src="/assets/icons/upIcon.svg" alt="" />
             </div>
-            <div className="w-full min-h-[200px] bg-[#F1F1F1] rounded-br-lg rounded-bl-lg">
+            <div className="w-full min-h-[200px] max-h-[300px] overflow-y-auto bg-[#F1F1F1] rounded-br-lg rounded-bl-lg">
               {renderTaskList(tasks.todo, "To-Do")}
             </div>
 
@@ -262,7 +292,7 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
               <p>In-Progress</p>
               <img src="/assets/icons/upIcon.svg" alt="" />
             </div>
-            <div className="w-full min-h-[200px] bg-[#F1F1F1] rounded-br-lg rounded-bl-lg">
+            <div className="w-full min-h-[200px] max-h-[300px] overflow-y-auto bg-[#F1F1F1] rounded-br-lg rounded-bl-lg">
               {renderTaskList(tasks.in_progress, "In-Progress")}
             </div>
 
@@ -270,7 +300,7 @@ const TaskList: React.FC<TaskListProps> = ({ user, setUser }) => {
               <p>Completed</p>
               <img src="/assets/icons/upIcon.svg" alt="" />
             </div>
-            <div className="w-full min-h-[200px] bg-[#F1F1F1] rounded-br-lg rounded-bl-lg">
+            <div className="w-full min-h-[200px] max-h-[300px] overflow-y-auto bg-[#F1F1F1] rounded-br-lg rounded-bl-lg">
               {renderTaskList(tasks.completed, "Completed")}
             </div>
           </div>
